@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Class for finding various shortest paths in a
@@ -45,7 +46,7 @@ public class WGraph {
 			 */
 			public Integer[] getCoords() {
 				return coords;
-			}
+			} // getCoords
 			
 			/*
 			 * (non-Javadoc)
@@ -54,7 +55,7 @@ public class WGraph {
 			@Override
 		    public int hashCode () {
 		        return Arrays.deepHashCode(this.coords);
-		    }
+		    } // hashCode
 
 			/*
 			 * (non-Javadoc)
@@ -64,8 +65,17 @@ public class WGraph {
 		    public boolean equals (Object obj) {
 		    	Node node = (Node)obj;
 		        return Arrays.deepEquals(this.coords, node.getCoords());
-		    }
-		}
+		    } // equals
+		    
+		    /*
+		     * (non-Javadoc)
+		     * @see java.lang.Object#toString()
+		     */
+		    @Override
+		    public String toString() {
+		    	return "(" + coords[0] + "," + coords[1] + ")";
+		    } // toString
+		} // Node
 		
 		/**
 		 * Class for representing a directed, weighted edge in the graph
@@ -83,7 +93,7 @@ public class WGraph {
 				this.node = node;
 				this.weight = weight;
 			}
-		}
+		} // Edge
 		
 		/**
 		 * Adjacency list represented as a HashMap
@@ -122,12 +132,25 @@ public class WGraph {
 			adjList.get(u).add(new Edge(v, weight));
 		} // addEdge
 		
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
 		@Override
 		public String toString() {
-			// TODO
-			return null;
-		}
-	}
+			StringBuilder retStr = new StringBuilder();
+			for (Map.Entry<Node, ArrayList<Edge>> entry : adjList.entrySet()) {
+				retStr.append(entry.getKey().toString());
+				for (Edge e : entry.getValue()) {
+					retStr.append("->");
+					retStr.append(e.weight);
+					retStr.append(e.node.toString());
+				}
+				retStr.append("\n");
+			}
+			return retStr.toString();
+		} // toString
+	} // Graph
 	
 	/**
 	 * Graph represented as adjacency list
@@ -145,7 +168,8 @@ public class WGraph {
 		graph = new Graph();
 		
 		try(BufferedReader br = new BufferedReader(new FileReader(FName))) {  // Open file for reading
-			String line, ux, uy, vx, vy;
+			String line;
+			int ux, uy, vx, vy;
 			String splitLine[];
 			int weight;
 			
@@ -158,19 +182,33 @@ public class WGraph {
 			
 			while((line = br.readLine()) != null) {  // Read in the edge information
 				splitLine = line.split(" ");
-				ux = splitLine[0];
-				uy = splitLine[1];
-				vx = splitLine[2];
-				vy = splitLine[3];
+				ux = Integer.parseInt(splitLine[0]);
+				uy = Integer.parseInt(splitLine[1]);
+				vx = Integer.parseInt(splitLine[2]);
+				vy = Integer.parseInt(splitLine[3]);
 				weight = Integer.parseInt(splitLine[4]);
 				
-				
+				graph.addEdge(ux, uy, vx, vy, weight);
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	} // WGraph
+	}
 	
-}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		String wgraphStr = "Nodes: " + graph.numNodes + "\n";
+		wgraphStr += "Edges: " + graph.numEdges + "\n";
+		wgraphStr += graph.toString();
+		return wgraphStr;
+	} // toString
+	
+} // WGraph
