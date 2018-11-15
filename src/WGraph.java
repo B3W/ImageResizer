@@ -3,9 +3,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.PriorityQueue;
 
 /**
@@ -40,7 +37,7 @@ public class WGraph {
 	 * to be used as key in a HashMap.
 	 * @author Weston Berg
 	 */
-	private class Node {
+	private class Node implements Comparable<Node>{
 		private int x, y;
 		ArrayList<Edge> edges;
 		// Fields needed for Djikstra's Algorithm
@@ -74,6 +71,15 @@ public class WGraph {
 	    	}
 	        return (this.x == node.x) && (this.y == node.y);
 	    } // equals
+	    
+	    /*
+	     * (non-Javadoc)
+	     * @see java.lang.Comparable#compareTo(java.lang.Object)
+	     */
+	    @Override
+		public int compareTo(Node node) {
+			return Integer.compare(dist, node.dist);
+		} // compareTo
 	    
 	    /*
 	     * (non-Javadoc)
@@ -128,6 +134,8 @@ public class WGraph {
 				edgeIndex = adjList.indexOf(edgeNode);
 				if(!(edgeIndex < 0)) { // Check if destination vertex already exists
 					edgeNode = adjList.get(edgeIndex);
+				} else {
+					adjList.add(edgeNode);
 				}
 				srcNode = new Node(ux, uy);
 				srcIndex = adjList.indexOf(srcNode);
@@ -159,22 +167,66 @@ public class WGraph {
 	 */
 	ArrayList<Integer> V2V(int ux, int uy, int vx, int vy) {
 		Node src = new Node(ux, uy);
+		int destIndex;
 		Node curNode;
 		ArrayList<Integer> minPath = new ArrayList<Integer>();
 		PriorityQueue<Node> pq = new PriorityQueue<Node>();
+		
+		// Error check given coordinates
+		if (adjList.indexOf(src) < 0) {
+			throw new IllegalArgumentException("Given source node with coordinates " + vx + ", " + uy + " not in graph.");
+		}
+		destIndex = adjList.indexOf(new Node(vx, vy));
+		if (destIndex < 0) {
+			throw new IllegalArgumentException("Given destination node with coordinates " + vx + ", " + vy + " not in graph.");
+		}
+		// Check if source and destination are equal
+		if (src.equals(new Node(vx, vy))) {
+			minPath.add(src.x);
+			minPath.add(src.y);
+			return minPath;
+		}
 		// Initialize priority queue values
 		for (Node n : adjList) {
 			if(n.equals(src)) {
 				n.dist = 0;
-				n.parent = null;
 			} else {
 				n.dist = Integer.MAX_VALUE;
 			}
+			n.parent = null;
 			n.visited = false;
 			pq.add(n);
 		}
-		// TODO Perform Djikstra's
+		// Perform Djikstra's
+		while (!pq.isEmpty()) {
+			curNode = pq.poll();
+			curNode.visited = true;
+			for (Edge e : curNode.edges) {
+				if (!e.node.visited) {
+					if (e.node.dist > (curNode.dist + e.weight)) {
+						pq.remove(e.node);
+						e.node.dist = curNode.dist + e.weight;
+						e.node.parent = curNode;
+						pq.add(e.node);	
+					}
+				}
+			}
+		}
+		// Trace back shortest path from destination
+		curNode = adjList.get(destIndex);
+		boolean pathToSrc = false;
+		do {
+			minPath.add(0, curNode.y);
+			minPath.add(0, curNode.x);
+			curNode = curNode.parent;
+			if (curNode != null) {
+				pathToSrc = curNode.equals(src);
+			}
+		} while(curNode != null);
 		
+		if (!pathToSrc) {
+			minPath.clear();
+		}
 		return minPath;
 	} // V2V
 	
