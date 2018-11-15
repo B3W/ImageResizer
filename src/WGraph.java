@@ -41,7 +41,8 @@ public class WGraph {
 	 * @author Weston Berg
 	 */
 	private class Node {
-		private final Integer[] coords;
+		private int x, y;
+		ArrayList<Edge> edges;
 		// Fields needed for Djikstra's Algorithm
 		private int dist;
 		private Node parent;
@@ -50,41 +51,28 @@ public class WGraph {
 		/**
 		 * @param coords  Array of size 2 with x coordinate at index 0 and y coordinate at index 1
 		 */
-		public Node(Integer[] coords) {
-			if(coords.length != 2) {
-				throw new IllegalArgumentException();
-			}
-			this.coords = coords;
+		public Node(int x, int y) {
+			this.x = x;
+			this.y = y;
+			this.edges = new ArrayList<Edge>();
 			this.dist = 0;
 			this.parent = null;
 			this.visited = false;
 		}
 		
-		/**
-		 * Getter for Node coordinates
-		 * @return  Array of size 2 representing x, y coordinates of Node
-		 */
-		public Integer[] getCoords() {
-			return coords;
-		} // getCoords
-			
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-	    public int hashCode () {
-	        return Arrays.deepHashCode(this.coords);
-	    } // hashCode
-
 		/*
 		 * (non-Javadoc)
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 	    @Override
 	    public boolean equals (Object obj) {
-	    	Node node = (Node)obj;
-	        return Arrays.deepEquals(this.coords, node.getCoords());
+	    	Node node;
+	    	try {
+	    		node = (Node)obj;
+	    	} catch(ClassCastException cce) {
+	    		return false;
+	    	}
+	        return (this.x == node.x) && (this.y == node.y);
 	    } // equals
 	    
 	    /*
@@ -93,77 +81,16 @@ public class WGraph {
 	     */
 	    @Override
 	    public String toString() {
-	    	return "(" + coords[0] + "," + coords[1] + ")";
+	    	return "(" + x + "," + y + ")";
 	    } // toString
 	} // Node
-	
-	/**
-	 * Class for representing the graph as an adjacency list
-	 * @author Weston Berg
-	 */
-	private class Graph {
-		
-		/**
-		 * Adjacency list represented as a HashMap
-		 */
-		private HashMap<Node, ArrayList<Edge>> adjList;
-		private int numNodes;
-		private int numEdges;
-		
-		/**
-		 * Constructs an empty graph
-		 */
-		public Graph() {
-			adjList = new HashMap<Node, ArrayList<Edge>>();
-			numNodes = 0;
-			numEdges = 0;
-		}
-		
-		/**
-		 * Add an edge to the graph. If the the source vertex is not already
-		 * in the adjacency list then a new entry is created. Assume there are
-		 * no duplicate edges so no error checking is needed.
-		 * 
-		 * @param src  Source node
-		 * @param dest  Destination node
-		 * @param weight  Weight of the directed edge between nodes
-		 */
-		public void addEdge(int srcX, int srcY, int destX, int destY, int weight) {
-			Node u, v;
-			
-			u = new Node(new Integer[] {srcX, srcY});
-			v = new Node(new Integer[] {destX, destY});
-			
-			if(!adjList.containsKey(u)) {
-				adjList.put(u, new ArrayList<Edge>());
-			}
-			adjList.get(u).add(new Edge(v, weight));
-		} // addEdge
-		
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			StringBuilder retStr = new StringBuilder();
-			for (Map.Entry<Node, ArrayList<Edge>> entry : adjList.entrySet()) {
-				retStr.append(entry.getKey().toString());
-				for (Edge e : entry.getValue()) {
-					retStr.append("->");
-					retStr.append(e.weight);
-					retStr.append(e.node.toString());
-				}
-				retStr.append("\n");
-			}
-			return retStr.toString();
-		} // toString
-	} // Graph
-	
+
 	/**
 	 * Graph represented as adjacency list
 	 */
-	private Graph graph;
+	private ArrayList<Node> adjList;
+	private int numNodes;
+	private int numEdges;
 	
 	/**
 	 * Constructs a graph which will then be analyzed for
@@ -173,19 +100,20 @@ public class WGraph {
 	 * @param FName  Name of file containing edge info
 	 */
 	public WGraph(String FName) {
-		graph = new Graph();
+		adjList = new ArrayList<Node>();
 		
 		try(BufferedReader br = new BufferedReader(new FileReader(FName))) {  // Open file for reading
 			String line;
-			int ux, uy, vx, vy;
-			String splitLine[];
+			int ux, uy, vx, vy, srcIndex, edgeIndex;
 			int weight;
+			String splitLine[];
+			Node srcNode, edgeNode;
 			
 			if((line = br.readLine()) != null) {  // Read in number of nodes in the graph
-				graph.numNodes = Integer.parseUnsignedInt(line);
+				numNodes = Integer.parseUnsignedInt(line);
 			}
 			if((line = br.readLine()) != null) {  // Read in number of edges in the graph
-				graph.numEdges = Integer.parseUnsignedInt(line);
+				numEdges = Integer.parseUnsignedInt(line);
 			}
 			
 			while((line = br.readLine()) != null) {  // Read in the edge information
@@ -194,9 +122,21 @@ public class WGraph {
 				uy = Integer.parseInt(splitLine[1]);
 				vx = Integer.parseInt(splitLine[2]);
 				vy = Integer.parseInt(splitLine[3]);
-				weight = Integer.parseInt(splitLine[4]);
-				
-				graph.addEdge(ux, uy, vx, vy, weight);
+				weight = Integer.parseInt(splitLine[4]);				
+				// Add new node or update existing
+				edgeNode = new Node(vx, vy);
+				edgeIndex = adjList.indexOf(edgeNode);
+				if(!(edgeIndex < 0)) { // Check if destination vertex already exists
+					edgeNode = adjList.get(edgeIndex);
+				}
+				srcNode = new Node(ux, uy);
+				srcIndex = adjList.indexOf(srcNode);
+				if(srcIndex < 0) { // Check if src node already exists
+					srcNode.edges.add(new Edge(edgeNode, weight));
+					adjList.add(srcNode);
+				} else {
+					adjList.get(srcIndex).edges.add(new Edge(edgeNode, weight));
+				}
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -218,22 +158,24 @@ public class WGraph {
       			in the returned path (path is an ordered sequence of vertices)
 	 */
 	ArrayList<Integer> V2V(int ux, int uy, int vx, int vy) {
-		Node src = new Node(new Integer[] {ux, uy});
+		Node src = new Node(ux, uy);
 		Node curNode;
 		ArrayList<Integer> minPath = new ArrayList<Integer>();
 		PriorityQueue<Node> pq = new PriorityQueue<Node>();
 		// Initialize priority queue values
-		for (Map.Entry<Node, ArrayList<Edge>> entry : graph.adjList.entrySet()) {
-			if(entry.getKey().equals(src)) {
-				entry.getKey().dist = 0;
-				entry.getKey().parent = null;
+		for (Node n : adjList) {
+			if(n.equals(src)) {
+				n.dist = 0;
+				n.parent = null;
 			} else {
-				entry.getKey().dist = Integer.MAX_VALUE;
+				n.dist = Integer.MAX_VALUE;
 			}
-			pq.add(entry.getKey());
+			n.visited = false;
+			pq.add(n);
 		}
+		// TODO Perform Djikstra's
 		
-		return null;
+		return minPath;
 	} // V2V
 	
 	/*
@@ -242,10 +184,21 @@ public class WGraph {
 	 */
 	@Override
 	public String toString() {
-		String wgraphStr = "Nodes: " + graph.numNodes + "\n";
-		wgraphStr += "Edges: " + graph.numEdges + "\n";
-		wgraphStr += graph.toString();
-		return wgraphStr;
+		Node curNode;
+		StringBuilder wGraphStr = new StringBuilder();
+		wGraphStr.append("Nodes: " + numNodes + "\n");
+		wGraphStr.append("Edges: " + numEdges + "\n");
+		for (int i = 0; i < adjList.size(); i++) {
+			curNode = adjList.get(i);
+			wGraphStr.append(curNode.toString());
+			for (Edge e : curNode.edges) {
+				wGraphStr.append("->");
+				wGraphStr.append(e.weight);
+				wGraphStr.append(e.node.toString());
+			}
+			wGraphStr.append("\n");
+		}
+		return wGraphStr.toString();
 	} // toString
 	
 } // WGraph
