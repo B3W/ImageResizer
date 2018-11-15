@@ -263,7 +263,7 @@ public class WGraph {
 	 * the returned path is picked arbitrarily.
 	 * @param ux  Source vertex x-coordinate
 	 * @param uy  Source vertex y-coordinate
-	 * @param S  Represents a set of destination vertices
+	 * @param S  Represents a set of destination vertices (Assuming correct formatting)
 	 * @return  ArrayList containing even number of integers,
    				for any even i,	i-th and i+1-th integers in the array represent
 				the x-coordinate and y-coordinate of the i/2-th vertex
@@ -281,7 +281,28 @@ public class WGraph {
 		// Calculate shortest paths
 		CalculateShortestPaths(src);
 		// Only trace back shortest paths with costs which are less than current minimal cost
-		
+		ArrayList<Integer> tmpPath = new ArrayList<Integer>();
+		int curDist;
+		boolean pathToSrc;
+		for (int i = 0; i < S.size(); i+=2) {
+			curNode = adjList.get(adjList.indexOf(new Node(S.get(i), S.get(i+1))));
+			if (curNode.dist < minPathCost) {
+				curDist = curNode.dist;
+				pathToSrc = false;
+				do {
+					tmpPath.add(0, curNode.y);
+					tmpPath.add(0, curNode.x);
+					pathToSrc = curNode.equals(src);
+					curNode = curNode.parent;
+				} while(curNode != null);
+				
+				if (pathToSrc) {
+					minPath = new ArrayList<Integer>(tmpPath);
+					minPathCost = curDist;
+				}
+				tmpPath.clear();
+			}
+		}
 		return minPath;
    	} // V2S
 	
