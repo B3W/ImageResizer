@@ -284,6 +284,7 @@ public class WGraph {
 		ArrayList<Integer> tmpPath = new ArrayList<Integer>();
 		int curDist;
 		boolean pathToSrc;
+		minPathCost = Integer.MAX_VALUE;
 		for (int i = 0; i < S.size(); i+=2) {
 			curNode = adjList.get(adjList.indexOf(new Node(S.get(i), S.get(i+1))));
 			if (curNode.dist < minPathCost) {
@@ -305,6 +306,37 @@ public class WGraph {
 		}
 		return minPath;
    	} // V2S
+	
+	/**
+	 * Calculates the shortest path between given set of source vertices and
+	 * given set of destination vertices. ArrayLists containing the source and
+	 * destination vertices are of the following format:
+	 * Even number of integers - for any even i, i-th and i+1-th integers in
+	 * the array represent the x-coordinate and y-coordinate of the i/2-th
+	 * vertex in the ArrayList.
+	 * Only one minimal path is returned. If there are multiple minimal paths
+	 * the returned path is picked arbitrarily.
+	 * @param S1  Represents a set of source vertices (Assuming correct formatting)
+	 * @param S2  Represents a set of destination vertices (Assuming correct formatting)
+	 * @return  ArrayList containing even number of integers,
+   				for any even i,	i-th and i+1-th integers in the array represent
+				the x-coordinate and y-coordinate of the i/2-th vertex
+				in the returned path (path is an ordered sequence of vertices)
+	 */
+	public ArrayList<Integer> S2S(ArrayList<Integer> S1, ArrayList<Integer> S2) {
+		ArrayList<Integer> tmpPath;
+		ArrayList<Integer> minPath = new ArrayList<Integer>();
+		int minCost = Integer.MAX_VALUE;
+		
+		for (int i = 0; i < S1.size(); i+=2) {
+			tmpPath = V2S(S1.get(i), S1.get(i+1), S2);
+			if(minPathCost < minCost) {
+				minCost = minPathCost;
+				minPath = new ArrayList<Integer>(tmpPath);
+			}
+		}
+		return minPath;
+	}
 	
 	/*
 	 * (non-Javadoc)
