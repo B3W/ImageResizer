@@ -33,8 +33,8 @@ public class WGraph {
 	
 	/**
 	 * Class for representing node with 2D coordinates.
-	 * Needs to override hashcode and equals to be able
-	 * to be used as key in a HashMap.
+	 * Needs to implement the Comparable interface in
+	 * order to be used in the priority queue.
 	 * @author Weston Berg
 	 */
 	private class Node implements Comparable<Node>{
@@ -46,7 +46,8 @@ public class WGraph {
 		private boolean visited;
 		
 		/**
-		 * @param coords  Array of size 2 with x coordinate at index 0 and y coordinate at index 1
+		 * @param x  X-coordinate
+		 * @param y  Y-coordinate
 		 */
 		public Node(int x, int y) {
 			this.x = x;
