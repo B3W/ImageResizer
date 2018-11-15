@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 /**
  * Class for finding various shortest paths in a
@@ -16,84 +17,91 @@ import java.util.Map;
 public class WGraph {
 	
 	/**
+	 * Class for representing a directed, weighted edge in the graph
+	 * @author Weston Berg
+	 */
+	private class Edge {
+		private Node node;
+		private int weight;
+		
+		/**
+		 * @param node  Node at which edge ends
+		 * @param weight  Weight of the edge
+		 */
+		public Edge(Node node, int weight) {
+			this.node = node;
+			this.weight = weight;
+		}
+	} // Edge
+	
+	/**
+	 * Class for representing node with 2D coordinates.
+	 * Needs to override hashcode and equals to be able
+	 * to be used as key in a HashMap.
+	 * @author Weston Berg
+	 */
+	private class Node {
+		private final Integer[] coords;
+		// Fields needed for Djikstra's Algorithm
+		private int dist;
+		private Node parent;
+		private boolean visited;
+		
+		/**
+		 * @param coords  Array of size 2 with x coordinate at index 0 and y coordinate at index 1
+		 */
+		public Node(Integer[] coords) {
+			if(coords.length != 2) {
+				throw new IllegalArgumentException();
+			}
+			this.coords = coords;
+			this.dist = 0;
+			this.parent = null;
+			this.visited = false;
+		}
+		
+		/**
+		 * Getter for Node coordinates
+		 * @return  Array of size 2 representing x, y coordinates of Node
+		 */
+		public Integer[] getCoords() {
+			return coords;
+		} // getCoords
+			
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+	    public int hashCode () {
+	        return Arrays.deepHashCode(this.coords);
+	    } // hashCode
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+	    @Override
+	    public boolean equals (Object obj) {
+	    	Node node = (Node)obj;
+	        return Arrays.deepEquals(this.coords, node.getCoords());
+	    } // equals
+	    
+	    /*
+	     * (non-Javadoc)
+	     * @see java.lang.Object#toString()
+	     */
+	    @Override
+	    public String toString() {
+	    	return "(" + coords[0] + "," + coords[1] + ")";
+	    } // toString
+	} // Node
+	
+	/**
 	 * Class for representing the graph as an adjacency list
 	 * @author Weston Berg
 	 */
 	private class Graph {
-		
-		/**
-		 * Class for representing node with 2D coordinates.
-		 * Needs to override hashcode and equals to be able
-		 * to be used as key in a HashMap.
-		 * @author Weston Berg
-		 */
-		private class Node {
-			private final Integer[] coords;
-			
-			/**
-			 * @param coords  Array of size 2 with x coordinate at index 0 and y coordinate at index 1
-			 */
-			public Node(Integer[] coords) {
-				if(coords.length != 2) {
-					throw new IllegalArgumentException();
-				}
-				this.coords = coords;
-			}
-			
-			/**
-			 * Getter for Node coordinates
-			 * @return  Array of size 2 representing x, y coordinates of Node
-			 */
-			public Integer[] getCoords() {
-				return coords;
-			} // getCoords
-			
-			/*
-			 * (non-Javadoc)
-			 * @see java.lang.Object#hashCode()
-			 */
-			@Override
-		    public int hashCode () {
-		        return Arrays.deepHashCode(this.coords);
-		    } // hashCode
-
-			/*
-			 * (non-Javadoc)
-			 * @see java.lang.Object#equals(java.lang.Object)
-			 */
-		    @Override
-		    public boolean equals (Object obj) {
-		    	Node node = (Node)obj;
-		        return Arrays.deepEquals(this.coords, node.getCoords());
-		    } // equals
-		    
-		    /*
-		     * (non-Javadoc)
-		     * @see java.lang.Object#toString()
-		     */
-		    @Override
-		    public String toString() {
-		    	return "(" + coords[0] + "," + coords[1] + ")";
-		    } // toString
-		} // Node
-		
-		/**
-		 * Class for representing a directed, weighted edge in the graph
-		 * @author Weston Berg
-		 */
-		private class Edge {
-			private Node node;
-			private int weight;
-			
-			/**
-			 * @param node  Node at which edge ends
-			 * @param weight  Weight of the edge
-			 */
-			public Edge(Node node, int weight) {
-				this.node = node;
-				this.weight = weight;
-			}
-		} // Edge
 		
 		/**
 		 * Adjacency list represented as a HashMap
@@ -197,7 +205,36 @@ public class WGraph {
 		}
 	}
 	
-	
+	/**
+	 * Calculates the shortest path using Djikstra's algorithm
+	 * from specified source vertex to specified destination vertex.
+	 * @param ux  Source vertex x-coordinate
+	 * @param uy  Source vertex y-coordinate
+	 * @param vx  Destination vertex x-coordinate
+	 * @param vy  Destination vertex y-coordinate
+	 * @return 	ArrayList containing even number of integers,
+               	for any even i,	i-th and i+1-th integers in the array represent
+       			the x-coordinate and y-coordinate of the i/2-th vertex
+      			in the returned path (path is an ordered sequence of vertices)
+	 */
+	ArrayList<Integer> V2V(int ux, int uy, int vx, int vy) {
+		Node src = new Node(new Integer[] {ux, uy});
+		Node curNode;
+		ArrayList<Integer> minPath = new ArrayList<Integer>();
+		PriorityQueue<Node> pq = new PriorityQueue<Node>();
+		// Initialize priority queue values
+		for (Map.Entry<Node, ArrayList<Edge>> entry : graph.adjList.entrySet()) {
+			if(entry.getKey().equals(src)) {
+				entry.getKey().dist = 0;
+				entry.getKey().parent = null;
+			} else {
+				entry.getKey().dist = Integer.MAX_VALUE;
+			}
+			pq.add(entry.getKey());
+		}
+		
+		return null;
+	} // V2V
 	
 	/*
 	 * (non-Javadoc)
