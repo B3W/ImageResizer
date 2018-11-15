@@ -97,6 +97,10 @@ public class WGraph {
 	private ArrayList<Node> adjList;
 	private int numNodes;
 	private int numEdges;
+	/**
+	 * Tracks cost of minimum path from most recent call of V2V, V2S, or S2S
+	 */
+	private int minPathCost;
 	
 	/**
 	 * Constructs a graph which will then be analyzed for
@@ -107,6 +111,7 @@ public class WGraph {
 	 */
 	public WGraph(String FName) {
 		adjList = new ArrayList<Node>();
+		minPathCost = Integer.MAX_VALUE;
 		
 		try(BufferedReader br = new BufferedReader(new FileReader(FName))) {  // Open file for reading
 			String line;
@@ -154,38 +159,16 @@ public class WGraph {
 	}
 	
 	/**
-	 * Calculates the shortest path using Djikstra's algorithm
-	 * from specified source vertex to specified destination vertex.
+	 * Implementation of Djikstra's shortest path algorithm
 	 * @param ux  Source vertex x-coordinate
 	 * @param uy  Source vertex y-coordinate
 	 * @param vx  Destination vertex x-coordinate
 	 * @param vy  Destination vertex y-coordinate
-	 * @return 	ArrayList containing even number of integers,
-               	for any even i,	i-th and i+1-th integers in the array represent
-       			the x-coordinate and y-coordinate of the i/2-th vertex
-      			in the returned path (path is an ordered sequence of vertices)
 	 */
-	ArrayList<Integer> V2V(int ux, int uy, int vx, int vy) {
-		Node src = new Node(ux, uy);
-		int destIndex;
+	private void CalculateShortestPaths(Node src) {
 		Node curNode;
-		ArrayList<Integer> minPath = new ArrayList<Integer>();
 		PriorityQueue<Node> pq = new PriorityQueue<Node>();
 		
-		// Error check given coordinates
-		if (adjList.indexOf(src) < 0) {
-			throw new IllegalArgumentException("Given source node with coordinates " + vx + ", " + uy + " not in graph.");
-		}
-		destIndex = adjList.indexOf(new Node(vx, vy));
-		if (destIndex < 0) {
-			throw new IllegalArgumentException("Given destination node with coordinates " + vx + ", " + vy + " not in graph.");
-		}
-		// Check if source and destination are equal
-		if (src.equals(new Node(vx, vy))) {
-			minPath.add(src.x);
-			minPath.add(src.y);
-			return minPath;
-		}
 		// Initialize priority queue values
 		for (Node n : adjList) {
 			if(n.equals(src)) {
@@ -212,8 +195,46 @@ public class WGraph {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Calculates the shortest path using Djikstra's algorithm
+	 * from specified source vertex to specified destination vertex.
+	 * @param ux  Source vertex x-coordinate
+	 * @param uy  Source vertex y-coordinate
+	 * @param vx  Destination vertex x-coordinate
+	 * @param vy  Destination vertex y-coordinate
+	 * @return 	ArrayList containing even number of integers,
+               	for any even i,	i-th and i+1-th integers in the array represent
+       			the x-coordinate and y-coordinate of the i/2-th vertex
+      			in the returned path (path is an ordered sequence of vertices)
+	 */
+	public ArrayList<Integer> V2V(int ux, int uy, int vx, int vy) {
+		Node src = new Node(ux, uy);
+		int destIndex;
+		Node curNode;
+		ArrayList<Integer> minPath = new ArrayList<Integer>();
+		
+		// Error check given coordinates
+		if (adjList.indexOf(src) < 0) {
+			throw new IllegalArgumentException("Given source node with coordinates " + ux + ", " + uy + " not in graph.");
+		}
+		destIndex = adjList.indexOf(new Node(vx, vy));
+		if (destIndex < 0) {
+			throw new IllegalArgumentException("Given destination node with coordinates " + vx + ", " + vy + " not in graph.");
+		}
+		// Check if source and destination are equal
+		if (src.equals(new Node(vx, vy))) {
+			minPathCost = 0;
+			minPath.add(src.x);
+			minPath.add(src.y);
+			return minPath;
+		}
+		// Calculate the shortest paths
+		CalculateShortestPaths(src);
 		// Trace back shortest path from destination
 		curNode = adjList.get(destIndex);
+		minPathCost = curNode.dist;
 		boolean pathToSrc = false;
 		do {
 			minPath.add(0, curNode.y);
@@ -225,10 +246,44 @@ public class WGraph {
 		} while(curNode != null);
 		
 		if (!pathToSrc) {
+			minPathCost = Integer.MAX_VALUE;
 			minPath.clear();
 		}
 		return minPath;
 	} // V2V
+	
+	/**
+	 * Calculates the shortest path between the given source vertex
+	 * and set of destination vertices. ArrayList containing the destination
+	 * vertices is of the following format:
+	 * Even number of integers - for any even i, i-th and i+1-th integers in
+	 * the array represent the x-coordinate and y-coordinate of the i/2-th
+	 * vertex in the ArrayList.
+	 * Only one minimal path is returned. If there are multiple minimal paths
+	 * the returned path is picked arbitrarily.
+	 * @param ux  Source vertex x-coordinate
+	 * @param uy  Source vertex y-coordinate
+	 * @param S  Represents a set of destination vertices
+	 * @return  ArrayList containing even number of integers,
+   				for any even i,	i-th and i+1-th integers in the array represent
+				the x-coordinate and y-coordinate of the i/2-th vertex
+				in the returned path (path is an ordered sequence of vertices)
+	 */
+	public ArrayList<Integer> V2S(int ux, int uy, ArrayList<Integer> S) {
+		Node src = new Node(ux, uy);
+		Node curNode;
+		ArrayList<Integer> minPath = new ArrayList<Integer>();
+		
+		// Error check given coordinates
+		if (adjList.indexOf(src) < 0) {
+			throw new IllegalArgumentException("Given source node with coordinates " + ux + ", " + uy + " not in graph.");
+		}
+		// Calculate shortest paths
+		CalculateShortestPaths(src);
+		// Only trace back shortest paths with costs which are less than current minimal cost
+		
+		return minPath;
+   	} // V2S
 	
 	/*
 	 * (non-Javadoc)
