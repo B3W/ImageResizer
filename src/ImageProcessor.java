@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +66,7 @@ public class ImageProcessor {
 			i = 0;
 			while ((line = br.readLine()) != null) {  // Read in pixel info
 				imgMatrix.add(new ArrayList<Pixel>(imgW));
-				spltLine = line.split(" ");
+				spltLine = line.trim().split(" +");
 				for (int index = 0; index < spltLine.length; index+=3) {
 					r = Integer.parseInt(spltLine[index]);
 					g = Integer.parseInt(spltLine[index+1]);
@@ -156,10 +158,11 @@ public class ImageProcessor {
 	 * @param FName  Filename to write modified image pixel data to
 	 */
 	public void writeReduced(int k, String FName) {
+		/*
 		if ((imgW - k) < 2) {
-			throw new IllegalArgumentException("Invalid reduction amount.\n"
-					+ "Image must have pixel width greater than 1 after reduction.");
+			throw new IllegalArgumentException("Invalid reduction amount. Image must have pixel width greater than 1 after reduction.");
 		}
+		*/
 		ArrayList<ArrayList<Integer>> importance;
 		ArrayList<Integer> s1, s2, minCut;
 		WGraph pixelG;
@@ -167,12 +170,12 @@ public class ImageProcessor {
 		// Copy image matrix to prevent changing original
 		int originalW = imgW;
 		List<ArrayList<Pixel>> originalImgMatrix = new ArrayList<ArrayList<Pixel>>(imgH);
-		ArrayList<Pixel> row;
+		ArrayList<Pixel> listRow;
 		for (int i = 0; i < imgMatrix.size(); i++) {
-			row = imgMatrix.get(i);
+			listRow = imgMatrix.get(i);
 			originalImgMatrix.add(new ArrayList<Pixel>(imgW));
-			for (int j = 0; j < row.size(); j++) {
-				originalImgMatrix.get(i).add(row.get(j));
+			for (int j = 0; j < listRow.size(); j++) {
+				originalImgMatrix.get(i).add(listRow.get(j));
 			}
 		}
 		// Begin width reduction
@@ -199,9 +202,31 @@ public class ImageProcessor {
 			}
 			imgW--;
 		}
-		
 		// Write result
-		// TODO
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(FName))) {  // Open file for writing
+			ArrayList<Pixel> pixelRow;
+			bw.write(imgH + "\n");
+			bw.write(imgW + "\n");
+			for (int i = 0; i < imgMatrix.size(); i++) {
+				pixelRow = imgMatrix.get(i);
+				for (Pixel p : pixelRow) {
+					bw.write(p.r + " " + p.g + " " + p.b + " ");
+				}
+				bw.write("\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// Restore ImageProcessor object back to original state before reduction
+		imgW = originalW;
+		imgMatrix.clear();
+		for (int i = 0; i < originalImgMatrix.size(); i++) {
+			listRow = originalImgMatrix.get(i);
+			imgMatrix.add(new ArrayList<Pixel>(imgW));
+			for (int j = 0; j < listRow.size(); j++) {
+				imgMatrix.get(i).add(listRow.get(j));
+			}
+		}
 	} // writeReduced
 	
 	/*
