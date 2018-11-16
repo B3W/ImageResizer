@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.PriorityQueue;
 
 /**
@@ -157,7 +158,96 @@ public class WGraph {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	} // WGraph
+	
+	/**
+	 * Only works for graphs with the consistent edge behavior defined
+	 * in the problem statement.
+	 * @param importance  2D matrix of importance values for each node (pixel)
+	 */
+	public WGraph(List<ArrayList<Integer>> importance) {
+		int[] edgeData;
+		adjList = new ArrayList<Node>();
+		numNodes = 0;
+		numEdges = 0;
+		// int[] containing edge info in format:
+		// 0: ux, 1: uy, 2: vx, 4: vy, 5: weight
+		// where u is source vertex and v is destination vertex
+		ArrayList<int[]> edgeList = new ArrayList<int[]>();
+		int nextRow, rowCnt, colCnt, curImp;
+		rowCnt = importance.size() - 1;
+		// Construct edge data from image data
+		for(int i = 0; i < rowCnt; i++) {
+			colCnt = importance.get(i).size() - 1;
+			nextRow = i + 1;
+			for (int j = 0; j <= colCnt; j++) {
+				curImp = importance.get(i).get(j);
+				if (j != 0) { // Left edge valid
+					edgeData = new int[5];
+					edgeData[0] = j;
+					edgeData[1] = i;
+					edgeData[2] = j-1;
+					edgeData[3] = nextRow;
+					if (i != (rowCnt - 1)) {
+						edgeData[4] = curImp;
+					} else {
+						edgeData[4] = (curImp + importance.get(nextRow).get(j-1));
+					}
+					edgeList.add(edgeData);
+					numEdges++;
+				}
+				if (j < colCnt) { // Right edge valid
+					edgeData = new int[5];
+					edgeData[0] = j;
+					edgeData[1] = i;
+					edgeData[2] = j+1;
+					edgeData[3] = nextRow;
+					if (i != (rowCnt - 1)) {
+						edgeData[4] = curImp;
+					} else {
+						edgeData[4] = (curImp + importance.get(nextRow).get(j+1));
+					}
+					edgeList.add(edgeData);
+					numEdges++;
+				}
+				// Down edge always valid
+				edgeData = new int[5];
+				edgeData[0] = j;
+				edgeData[1] = i;
+				edgeData[2] = j;
+				edgeData[3] = nextRow;
+				if (i != (rowCnt - 1)) {
+					edgeData[4] = curImp;
+				} else {
+					edgeData[4] = (curImp + importance.get(nextRow).get(j));
+				}
+				edgeList.add(edgeData);
+				numEdges++;
+			}
+		}
+		// Construct graph from created edge data
+		Node srcNode, edgeNode;
+		int srcIndex, edgeIndex;
+		for (int[] edge : edgeList) {
+			// Add new node or update existing
+			edgeNode = new Node(edge[2], edge[3]);
+			edgeIndex = adjList.indexOf(edgeNode);
+			if(!(edgeIndex < 0)) { // Check if destination vertex already exists
+				edgeNode = adjList.get(edgeIndex);
+			} else {
+				adjList.add(edgeNode);
+			}
+			srcNode = new Node(edge[0], edge[1]);
+			srcIndex = adjList.indexOf(srcNode);
+			if(srcIndex < 0) { // Check if src node already exists
+				srcNode.edges.add(new Edge(edgeNode, edge[4]));
+				adjList.add(srcNode);
+			} else {
+				adjList.get(srcIndex).edges.add(new Edge(edgeNode, edge[4]));
+			}
+		}
+		numNodes = adjList.size();
+	} // WGraph
 	
 	/**
 	 * Implementation of Djikstra's shortest path algorithm
