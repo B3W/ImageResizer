@@ -305,15 +305,16 @@ public class WGraph {
 		int destIndex;
 		Node curNode;
 		ArrayList<Integer> minPath = new ArrayList<Integer>();
-		
+		destIndex = adjList.indexOf(new Node(vx, vy));
+		/*
 		// Error check given coordinates
 		if (adjList.indexOf(src) < 0) {
 			throw new IllegalArgumentException("Given source node with coordinates " + ux + ", " + uy + " not in graph.");
 		}
-		destIndex = adjList.indexOf(new Node(vx, vy));
 		if (destIndex < 0) {
 			throw new IllegalArgumentException("Given destination node with coordinates " + vx + ", " + vy + " not in graph.");
 		}
+		*/
 		// Check if source and destination are equal
 		if (src.equals(new Node(vx, vy))) {
 			minPathCost = 0;
@@ -364,11 +365,12 @@ public class WGraph {
 		Node src = new Node(ux, uy);
 		Node curNode;
 		ArrayList<Integer> minPath = new ArrayList<Integer>();
-		
+		/*
 		// Error check given coordinates
 		if (adjList.indexOf(src) < 0) {
 			throw new IllegalArgumentException("Given source node with coordinates " + ux + ", " + uy + " not in graph.");
 		}
+		*/
 		// Calculate shortest paths
 		CalculateShortestPaths(src);
 		// Only trace back shortest paths with costs which are less than current minimal cost
