@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class for shrinking images based on pixel
@@ -39,7 +40,7 @@ public class ImageProcessor {
 	
 	private int imgH;
 	private int imgW;
-	private Pixel[][] imgMatrix;
+	private List<ArrayList<Pixel>> imgMatrix;
 	
 	/**
 	 * Construct matrix representing each pixel in
@@ -50,7 +51,7 @@ public class ImageProcessor {
 		try (BufferedReader br = new BufferedReader(new FileReader(FName))) {  // Open file for reading
 			String line;
 			String[] spltLine;
-			int i, j, r, g, b;
+			int i, r, g, b;
 			
 			if ((line = br.readLine()) != null) {  // Read image height
 				imgH = Integer.parseUnsignedInt(line);
@@ -58,20 +59,19 @@ public class ImageProcessor {
 			if ((line = br.readLine()) != null) {  // Read image width
 				imgW = Integer.parseUnsignedInt(line);
 			}
-			imgMatrix = new Pixel[imgH][imgW];
+			imgMatrix = new ArrayList<ArrayList<Pixel>>(imgH);
 			
-			i = j = 0;
+			i = 0;
 			while ((line = br.readLine()) != null) {  // Read in pixel info
+				imgMatrix.add(new ArrayList<Pixel>(imgW));
 				spltLine = line.split(" ");
 				for (int index = 0; index < spltLine.length; index+=3) {
 					r = Integer.parseInt(spltLine[index]);
 					g = Integer.parseInt(spltLine[index+1]);
 					b = Integer.parseInt(spltLine[index+2]);
-					imgMatrix[i][j] = new Pixel(r, g, b);
-					j++;
+					imgMatrix.get(i).add(new Pixel(r, g, b));
 				}
 				i++;
-				j = 0;
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -103,11 +103,11 @@ public class ImageProcessor {
 	 */
 	private int computeXImportance(int i, int j) {
 		if (j == 0) {
-			return computePDist(imgMatrix[i][imgW-1], imgMatrix[i][j+1]);
+			return computePDist(imgMatrix.get(i).get(imgW-1), imgMatrix.get(i).get(j+1));
 		} else if (j == (imgW-1)) {
-			return computePDist(imgMatrix[i][j-1], imgMatrix[i][0]);
+			return computePDist(imgMatrix.get(i).get(j-1), imgMatrix.get(i).get(0));
 		} else {
-			return computePDist(imgMatrix[i][j-1], imgMatrix[i][j+1]);
+			return computePDist(imgMatrix.get(i).get(j-1), imgMatrix.get(i).get(j+1));
 		}
 	} // computeXImportance
 	
@@ -119,11 +119,11 @@ public class ImageProcessor {
 	 */
 	private int computeYImportance(int i, int j) {
 		if (i == 0) {
-			return computePDist(imgMatrix[imgH-1][j], imgMatrix[i+1][j]);
+			return computePDist(imgMatrix.get(imgH-1).get(j), imgMatrix.get(i+1).get(j));
 		} else if (i == (imgH-1)) {
-			return computePDist(imgMatrix[i-1][j], imgMatrix[0][j]);
+			return computePDist(imgMatrix.get(i-1).get(j), imgMatrix.get(0).get(j));
 		} else {
-			return computePDist(imgMatrix[i-1][j], imgMatrix[i+1][j]);
+			return computePDist(imgMatrix.get(i-1).get(j), imgMatrix.get(i+1).get(j));
 		}
 	} // computeYImportance
 
@@ -136,12 +136,10 @@ public class ImageProcessor {
 	public ArrayList<ArrayList<Integer>> getImportance() {
 		// Instantiate importance matrix
 		ArrayList<ArrayList<Integer>> impMatrix = new ArrayList<ArrayList<Integer>>(imgH);
-		for (int i = 0; i < imgH; i++) {
-			impMatrix.add(new ArrayList<Integer>(imgW));
-		}
 		// Compute importance of each pixel
 		int curImportance;
 		for (int i = 0; i < imgH; i++) {
+			impMatrix.add(new ArrayList<Integer>(imgW));
 			for (int j = 0; j < imgW; j++) {
 				curImportance = computeXImportance(i, j) + computeYImportance(i, j);
 				impMatrix.get(i).add(j, curImportance);
@@ -158,6 +156,51 @@ public class ImageProcessor {
 	 * @param FName  Filename to write modified image pixel data to
 	 */
 	public void writeReduced(int k, String FName) {
+		if ((imgW - k) < 2) {
+			throw new IllegalArgumentException("Invalid reduction amount.\n"
+					+ "Image must have pixel width greater than 1 after reduction.");
+		}
+		ArrayList<ArrayList<Integer>> importance;
+		ArrayList<Integer> s1, s2, minCut;
+		WGraph pixelG;
+		int lastRow = imgH - 1;
+		// Copy image matrix to prevent changing original
+		int originalW = imgW;
+		List<ArrayList<Pixel>> originalImgMatrix = new ArrayList<ArrayList<Pixel>>(imgH);
+		ArrayList<Pixel> row;
+		for (int i = 0; i < imgMatrix.size(); i++) {
+			row = imgMatrix.get(i);
+			originalImgMatrix.add(new ArrayList<Pixel>(imgW));
+			for (int j = 0; j < row.size(); j++) {
+				originalImgMatrix.get(i).add(row.get(j));
+			}
+		}
+		// Begin width reduction
+		s1 = new ArrayList<Integer>();
+		s2 = new ArrayList<Integer>();
+		for (int cnt = 0; cnt < k; cnt++) {
+			// Compute importance
+			importance = this.getImportance();
+			// Construct WGraph with Pixel info
+			pixelG = new WGraph(importance);
+			// Find minimum cost vertical cut
+			s1.clear();
+			s2.clear();
+			for (int j = 0; j < imgW; j++) { // Construct sets for S2S shortest path search
+				s1.add(j);
+				s1.add(0);
+				s2.add(j);
+				s2.add(lastRow);
+			}
+			minCut = pixelG.S2S(s1, s2);
+			// Remove pixels in min cut from image
+			for (int x = 0; x < minCut.size(); x+=2) {
+				imgMatrix.get(minCut.get(x+1)).remove(minCut.get(x).intValue());
+			}
+			imgW--;
+		}
+		
+		// Write result
 		// TODO
 	} // writeReduced
 	
@@ -170,7 +213,7 @@ public class ImageProcessor {
 		StringBuilder ipStr = new StringBuilder();
 		for (int i = 0; i < imgH; i++) {
 			for (int j = 0; j < imgW; j++) {
-				ipStr.append(imgMatrix[i][j].toString());
+				ipStr.append(imgMatrix.get(i).get(j).toString());
 				ipStr.append(" ");
 			}
 			ipStr.append('\n');
